@@ -1,0 +1,124 @@
+---
+render("input.md")
+---
+Reproducible Research :Activity Monitoring Data Assignment
+==========================================
+```{r}
+##opts_chunk$set(echo=TRUE, results = 'hold')
+
+```
+#get the packages
+```{r, echo=TRUE}
+library(ggplot2)
+library(scales)
+library(knitr)
+library(Hmisc)
+library(data.table)
+library(lattice)
+opts_chunk$set(echo=TRUE, results = 'hold')
+```
+Question 1. Load CVS data and looks the summary
+```{r, echo=TRUE}
+activityD <- read.csv("activity.csv")
+head(activityD)
+```
+Question 2.Histogram of the total number of steps taken each day.
+        * Create a dataframe using tapply() that sums the steps for each day.
+        * Make the histogram
+```{r histogram, echo = TRUE}
+SumstepsByDay <- aggregate(steps ~ date, activityD, sum, na.rm=TRUE)
+colnames(SumstepsByDay) <- c("date", "steps")
+ggplot(SumstepsByDay, aes(x = steps)) + geom_histogram(fill = "green", binwidth = 1500) + labs(main="Sum of Steps taken each Day", x = "Number of Steps", y = "Days") + theme_bw()
+```
+
+Question 3. Calculate Mean and Median  number of steps taken each day
+```{r meanandmedian, echo = TRUE}
+stepsByDayMean <- mean(SumstepsByDay$steps, na.rm = TRUE)
+stepsByDayMedian <- median(SumstepsByDay$steps, na.rm = TRUE)
+stepsByDayMean
+stepsByDayMedian
+```
+Mean: r stepsByDayMean
+Median: r stepsByDayMedian
+
+Question 4. Time series plot of the average number of steps taken 
+  *Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r timeseries, echo=TRUE}
+stepseach_interval <- aggregate(steps ~ interval, activityD, mean)
+plot(stepseach_interval$interval, stepseach_interval$steps, xlab ="interval", ylab ="Steps", main = "Average Number of steps taken by interval")
+```
+Question 5. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r maxsteps, echo=TRUE}
+maxNumSteps <- stepseach_interval[which.max(stepseach_interval$steps),1]
+maxNumSteps
+```
+Question  6. Code to Describe and show a strategy for imputing missing data
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+6.1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+```{r missingInputs, echo=TRUE}
+missingV <- sum(!complete.cases(activityD))
+missingV
+```
+6.2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For        example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+```{r echo=TRUE}
+missing_value <- sum(is.na(activityD$steps))
+missing_value
+```
+
+6.3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r, echo=TRUE}
+fill_na <- activityD
+fill_na$steps <- impute(fill_na$steps, fun=mean)
+sum(is.na(fill_na$steps))
+```
+6.4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps       taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing        missing data on the estimates of the total daily number of steps
+```{r tidy=FALSE}
+TotalStepsNA <- aggregate(steps ~ date, fill_na, sum)
+hist(TotalStepsNA$steps, main = paste("Total Steps each day"), col = "blue", xlab = "Steps(Imputed)")
+```
+
+Caculate and report the Mean 
+```{r, echo=TRUE}
+rmeantotal <- mean(TotalStepsNA$steps)
+rmeantotal
+```
+Caculate and report the Median
+```{r, echo=TRUE}
+rmediantotal <- median(TotalStepsNA$steps)
+rmediantotal
+```
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing        missing data on the estimates of the total daily number of steps
+```{r, echo=TRUE}
+rmeandiff <- rmeantotal - stepsByDayMean
+rmeandiff
+
+rmediandiff <- rmediantotal - stepsByDayMedian
+rmediandiff
+```
+There is no mean variance for the values but the median has a variance of 1.188679 between the two values.  The impact of missing data is substantail on 10000.
+
+7. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+Are there differences in activity patterns between weekdays and weekends?
+
+For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+
+Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+# Comparing differences in accitivity patterns weekends vs weekdays
+```{r}
+fill_na$dateType <- ifelse(as.POSIXlt(fill_na$date)$wday %in% c(0,6), 'weekend', 'weekday')
+Avg_wksfill_na <- aggregate(steps ~ interval + dateType, data=fill_na, mean)
+ggplot(Avg_wksfill_na, aes(interval, steps)) + 
+    geom_line() + 
+    facet_grid(dateType ~ .) +
+    xlab("Interval") + 
+    ylab("avarage number of steps")
+
+```
+
+End of the page
