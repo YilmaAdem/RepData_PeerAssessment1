@@ -1,6 +1,12 @@
+---
+render("input.md")
+---
 Reproducible Research :Activity Monitoring Data Assignment
 ==========================================
+```{r}
+##opts_chunk$set(echo=TRUE, results = 'hold')
 
+```
 #get the packages
 ```{r, echo=TRUE}
 library(ggplot2)
@@ -114,4 +120,5 @@ ggplot(Avg_wksfill_na, aes(interval, steps)) +
     ylab("avarage number of steps")
 
 ```
+
 End of the page
